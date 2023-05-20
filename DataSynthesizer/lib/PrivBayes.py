@@ -263,11 +263,9 @@ def construct_noisy_conditional_distributions(bayesian_network, encoded_dataset,
     for idx, (child, parents) in enumerate(bayesian_network):
         conditional_distributions[child] = {}
 
-        if idx <= k - 2:
+        if idx < k:
             stats = noisy_dist_of_kplus1_attributes.copy().loc[:, parents + [child, 'count']]
             stats = stats.groupby(parents + [child], as_index=False).sum()
-        elif idx == k - 1:
-            stats = noisy_dist_of_kplus1_attributes.loc[:, parents + [child, 'count']]
         else:
             stats = get_noisy_distribution_of_attributes(parents + [child], encoded_dataset, epsilon)
             stats = stats.loc[:, parents + [child, 'count']]

@@ -14,6 +14,8 @@ from DataSynthesizer.datatypes.utils.DataType import DataType
 from DataSynthesizer.lib import utils
 from DataSynthesizer.lib.PrivBayes import greedy_bayes, construct_noisy_conditional_distributions
 
+from DataSynthesizer.lib.GANetworkBuilder import GANetworkBuilder
+import time
 
 class DataDescriber:
     """Model input dataset, then save a description of the dataset into a JSON file.
@@ -176,6 +178,73 @@ class DataDescriber:
 
         self.bayesian_network = greedy_bayes(self.df_encoded, k, epsilon / 2, seed=seed)
         self.data_description['bayesian_network'] = self.bayesian_network
+        self.data_description['conditional_probabilities'] = construct_noisy_conditional_distributions(
+            self.bayesian_network, self.df_encoded, epsilon / 2)
+
+
+    def describe_dataset_in_correlated_attribute_mode_ga(self,
+                                                      dataset_file,
+                                                      k=0,
+                                                      epsilon=0.1,
+                                                      attribute_to_datatype: Dict[str, DataType] = None,
+                                                      attribute_to_is_categorical: Dict[str, bool] = None,
+                                                      attribute_to_is_candidate_key: Dict[str, bool] = None,
+                                                      categorical_attribute_domain_file: str = None,
+                                                      numerical_attribute_ranges: Dict[str, List] = None,
+                                                      seed=0,
+                                                      source_genes=10,
+                                                      genepool_size=100,
+                                                      epochs=100,
+                                                      sensi=None,
+                                                      target=None):
+        """Generate dataset description using correlated attribute mode, but using a genetic algorithm to find the structure more efficiently
+
+        Parameters
+        ----------
+        dataset_file : str
+            File name (with directory) of the sensitive dataset as input in csv format.
+        k : int
+            Maximum number of parents in Bayesian network.
+        epsilon : float
+            A parameter in Differential Privacy. Increase epsilon value to reduce the injected noises. Set epsilon=0 to turn
+            off Differential Privacy.
+        attribute_to_datatype : dict
+            Dictionary of {attribute: datatype}, e.g., {"age": "Integer", "gender": "String"}.
+        attribute_to_is_categorical : dict
+            Dictionary of {attribute: boolean}, e.g., {"gender":True, "age":False}.
+        attribute_to_is_candidate_key: dict
+            Dictionary of {attribute: boolean}, e.g., {"id":True, "name":False}.
+        categorical_attribute_domain_file: str
+            File name of a JSON file of some categorical attribute domains.
+        numerical_attribute_ranges: dict
+            Dictionary of {attribute: [min, max]}, e.g., {"age": [25, 65]}
+        seed : int or float
+            Seed the random number generator.
+            :param epochs:
+            :param target:
+            :param sensi:
+        """
+        self.describe_dataset_in_independent_attribute_mode(dataset_file,
+                                                            epsilon,
+                                                            attribute_to_datatype,
+                                                            attribute_to_is_categorical,
+                                                            attribute_to_is_candidate_key,
+                                                            categorical_attribute_domain_file,
+                                                            numerical_attribute_ranges,
+                                                            seed)
+        self.df_encoded = self.encode_dataset_into_binning_indices()
+        if self.df_encoded.shape[1] < 2:
+            raise Exception("Correlated Attribute Mode requires at least 2 attributes(i.e., columns) in dataset.")
+
+        start=time.time()
+        ga_network_builder = GANetworkBuilder(k,source_genes=source_genes,genepool_size=genepool_size,epochs=epochs,seed=0, sensi=sensi,target=target)
+        self.bayesian_network = ga_network_builder.ga_network(self.df_encoded)[1:]
+        print(self.bayesian_network)
+        end=time.time()
+        print("Runtime BN Construction: ", end-start)
+
+        self.data_description['bayesian_network'] = self.bayesian_network
+
         self.data_description['conditional_probabilities'] = construct_noisy_conditional_distributions(
             self.bayesian_network, self.df_encoded, epsilon / 2)
 

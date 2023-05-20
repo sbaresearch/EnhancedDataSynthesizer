@@ -88,7 +88,12 @@ class DataGenerator(object):
         bn_root_attr = bn[0][1][0]
         root_attr_dist = description['conditional_probabilities'][bn_root_attr]
         encoded_df = DataFrame(columns=DataGenerator.get_sampling_order(bn))
-        encoded_df[bn_root_attr] = random.choice(len(root_attr_dist), size=n, p=root_attr_dist)
+
+        if type(root_attr_dist) == type({}):
+            pValues = root_attr_dist[list(root_attr_dist.keys())[0]]
+            encoded_df[bn_root_attr] = random.choice(len(pValues), size=n, p=pValues)
+        else:
+            encoded_df[bn_root_attr] = random.choice(len(root_attr_dist), size=n, p=root_attr_dist)
 
         for child, parents in bn:
             child_conditional_distributions = description['conditional_probabilities'][child]
