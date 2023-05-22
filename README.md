@@ -14,6 +14,8 @@ parent nodes. This enhanced version provides a mode using Genetic Algorithms to 
 ### Protection of sensitive attributes
 By specifically reducing or even removing correlations between sensitive attributes and other attributes, attacks like attribute inference are reduced.
 
+A usage example can be found in notebooks/EnhancedDataSynthesizer_ga_correlated_attribute_mode.ipynb
+
 Details on these modifications can also be found in the paper [Efficient Bayesian Network Construction for Increased Privacy on Synthetic Data](http://dx.doi.org/10.1109/BigData55660.2022.10020936) by Markus Hittmeir, Rudolf Mayer, and Andreas Ekelhart.
 
 To cite that paper, please use the following:
